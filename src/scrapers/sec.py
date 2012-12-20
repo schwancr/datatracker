@@ -15,7 +15,9 @@ import MySQLdb
 class SECScraper(DocumentScraper):
 
     def __init__(self, ticker_symbol, form, 
-                 storage_location=DEFAULT_STORAGE_LOCATION):
+                 storage_location=DEFAULT_STORAGE_LOCATION,
+                 db_name=DB_NAME, db_user='tracker',
+                 db_host='localhost', db_table='sec_docs'):
         """
         Initialize the SECScraper instance. This works slightly
         differently than the other scrapers because it must
@@ -67,7 +69,7 @@ class SECScraper(DocumentScraper):
         # First create a table in the MySQL database if it
         # does not exist yet.    
 
-        
+            
                  
 
     

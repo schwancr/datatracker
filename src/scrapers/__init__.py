@@ -1,2 +1,2 @@
-from base_classes import ScraperBaseClass, URLBaseClass
+from base_classes import ScraperBaseClass
 from documents import DocumentScraper
