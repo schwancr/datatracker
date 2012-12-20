@@ -12,7 +12,7 @@ metadata = {
     'version': VERSION,
     'author': __author__,
     'author_email': 'schwancr@gmail.com',
-    'install_requires': [],
+    'install_requires': [ 'MySQLdb' ],
     'platforms': ["Linux", "Mac OS X"],
     'zip_safe': False,
     'description': "Python Code for Tracking Data from the Web, with a web interface",
