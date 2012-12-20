@@ -12,7 +12,7 @@ metadata = {
     'version': VERSION,
     'author': __author__,
     'author_email': 'schwancr@gmail.com',
-    'install_requires': ['django'],
+    'install_requires': [],
     'platforms': ["Linux", "Mac OS X"],
     'zip_safe': False,
     'description': "Python Code for Tracking Data from the Web, with a web interface",
@@ -28,24 +28,26 @@ from numpy.distutils.misc_util import Configuration
 def configuration(parent_package='',top_path=None):
     "Configure the build"
 
-    config = Configuration('data_tracker',
+    config = Configuration('datatracker',
                            package_parent=parent_package,
                            top_path=top_path,
-                           package_path='src/python')
+                           package_path='src')
     config.set_options(assume_default_configuration=True,
                        delegate_options_to_subpackages=True,
                        quiet=False)
     
     # add the scipts, so they can be called from the command line
-    config.add_scripts([e for e in glob('scripts/*.py') if not e.endswith('__.py')])
+   # config.add_scripts([e for e in glob('scripts/*.py') if not e.endswith('__.py')])
     
     # add scripts as a subpackage (so they can be imported from other scripts)
-    config.add_subpackage('scripts',
-                          subpackage_path=None)
+    #config.add_subpackage('scripts',
+#                          subpackage_path=None)
+
+    config.add_subpackage('scrapers', subpackage_path='src/scrapers')
 
     return config
 
 if __name__ == '__main__':
-    write_version_py()
     metadata['configuration'] = configuration
+    metadata['packages'] = ['datatracker', 'datatracker.scrapers']
     setup(**metadata)

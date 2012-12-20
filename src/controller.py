@@ -5,7 +5,7 @@ scraper objects at different time intervals to keep track of various
 data.
 """
 
-def Controller:
+class Controller:
 
     class ControlledScraper(scrapers.BaseScraperClass):
         """ ControlledScraper is a class that subclasses the scraper
