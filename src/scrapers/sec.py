@@ -66,10 +66,85 @@ class SECScraper(DocumentScraper):
             fetch the data
         """
 
-        # First create a table in the MySQL database if it
-        # does not exist yet.    
-
+        # If we can't find the cik number then we cannot proceed
+        try:
+            self.cik = utils.get_cik_from_ticker(ticker_symbol)
+        except:
+            raise Exception('Cannot find ticker symbol, please use a CIK instead.')
             
-                 
+        self.ticker_symbol = ticker_symbol
 
-    
+        self.db_name = db_name
+        self.db_user = db_user
+        self.db_host = db_host
+        self.db_table = db_table
+
+        self.form = form
+        self.oldest_date = oldest_date        
+
+        self.setup_database()
+
+    def setup_database(self):
+        """
+        Setup the mysql database for adding names.
+        """
+
+        try:
+            db = MySQLdb.connect(host=self.db_host, user=self.db_user)
+        except:
+            raise Exception('Cannot connect to MySQL on %s with user %s' %
+                            (self.db_host, self.db_user))
+
+        cursor = db.cursor()
+
+        cursor.execute('create database if not exists %s' % self.db_name)
+        cursor.execute('use %s' % self.db_name)
+        # Columns:
+        # ticker symbol, CIK, form, date filed, date fetched, file, url
+        cursor.execute('create table if not exists %s' % self.db_table +
+                       '(ticker varchar(10), CIK int, form varchar(10), ' +
+                       'file_date date, url text, file text, time_fetched datetime)')
+
+        db.commit()
+        db.close()
+
+    def update_url(self):
+        """
+        The SECScraper is essentially the DocumentScraper with a 
+        changing URL, that changes chronolocally to the next form
+        available.
+        """
+        
+
+    def fetch_data(self, return_text=False):
+        """
+        Wrap the DocumentScraper.fetch_data, because we have to update 
+        the URL before fetching data...
+        """
+        self.update_url()
+        fetched_text = super(SECScraper, self).fetch_data(self, return_text)
+
+        return fetched_text
+        
+    def save_data(self, filename):
+        """
+        Update the mysql database that stores each filename location.
+        """
+
+        db = MySQLdb.connect(host=self.db_host, user=self.db_user, 
+                             db=self.db_name)
+
+        cursor = db.cursor()
+
+        cursor.execute('insert into %s set ' % self.db_table
+                       'ticker = "%s" ' % self.ticker_symbol
+                       'CIK = %d ' % self.cik
+                       'form = "%s" ' % self.form
+                       'file_date = %s ' % self.last_filed_date
+                       'url = "%s" ' % self.url
+                       'file = "%s" ' % filename
+                       'time_fetched = now()')
+
+        db.commit()
+        db.close()
+        
