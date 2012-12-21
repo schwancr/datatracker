@@ -2,10 +2,13 @@
 import argparse
 import MySQLdb
 from datatracker import utils
+import argparse
+import zlib
+import re
 
 def main(forms=None, ciks=None, tickers=None, 
          date_range=None, user='tracker', host='localhost',
-         db='datatracker', table='sec_index'):
+         db_name='datatracker', table='sec_index'):
     """
 Update the indices stored on SEC's FTP 
 server. These indices are easily translated into a MySQL 
@@ -53,25 +56,51 @@ table [ sec_index ] - str
 
     # first setup the connection to mysql
 
-    db = MySQLdb.connect(host=host, user=user)
+    db_conn = MySQLdb.connect(host=host, user=user)
 
-    cursor = db.cursor()
+    cursor = db_conn.cursor()
 
-    cursor.execute('create database if not exists %s' % db)
-    cursor.execute('use %s' % db)
-    cursor.execute('create table if not exists %s' % table)
+    print 'create database if not exists %s' % db_name
+    cursor.execute('create database if not exists %s' % db_name)
+    cursor.execute('use %s' % db_name)
+    cursor.execute('create table if not exists %s' % table + 
+                   '( cik int, form varchar(10), name varchar(255), '
+                   ' url text, date_filed date )')
 
+    
     # need a plan here...   
+    # Form:
+    form_regex = r'(?P<form>[\d\w\-/]+)\s+(?P<name>[\w\s]+?)\s+(?P<cik>\d+)\s+(?P<date>[\d\-]+)\s+(?P<url>edgar/[\w/.\-\d]+)\s+'
+    regex = form_regex
 
+    insert_string = 'insert into %s (cik, name, form, date_files, url) values ' % table
 
+    year_qtr_tuples = [ (2000, 4) ]
+    for year, qtr in year_qtr_tuples:
+        open_url = utils.get_sec_index_file(year, qtr, compression='gz')
 
-    db.commit()
-    db.close()
+        flat_text = zlib.decompress(open_url.fp.read(), 15 + 32)
+        # Need to look up what 15 + 32 does... I just copied from stack overflow
+        line_list = flat_text.split('\n')
+        for line in flat_text.split('\n')[:20]:
+            match_obj = re.search(regex, line)
+            if not match_obj:
+                continue
+
+            d = match_obj.groupdict()
+            print d
+
+            insert_string += '( {cik}, "{name}", "{form}", "{date}", "ftp://sec.gov/{url}" ), '.format(**d)
+    
+    print insert_string
+
+    db_conn.commit()
+    db_conn.close()
 
 
 if __name__ == '__main__':
 
-    parser = ArgumentParser(description="""
+    parser = argparse.ArgumentParser(description="""
 This script will update the indices stored on SEC's FTP 
 server. These indices are easily translated into a MySQL 
 table with these columns:
@@ -105,11 +134,11 @@ the SEC indices.""" )
         Pass two arguments that denote dates to search between.
         Each date must be formatted as YYYYMMDD without any
         delimiters.""", default=None, dest='dates')
-    parser.add_argument('-h', '--host', default='localhost',
+    parser.add_argument('--host', default='localhost',
         help="""Mysql hostname [ localhost ]""", dest='host')
     parser.add_argument('-u', '--user', default='tracker',
         help="""mysql username [ tracker ]""", dest='user')
-    parser.add_argument('-d', '--database', default='datatracker',
+    parser.add_argument('--db', '--database', default='datatracker',
         help="""Database name to use. You probably should
             leave this as the default.""", dest='db')
     parser.add_argument('--table', default='sec_index', help="""
@@ -120,4 +149,4 @@ the SEC indices.""" )
 
     main(forms=args.forms, ciks=args.ciks, tickers=args.tickers, 
          date_range=args.dates, user=args.user, host=args.host,
-         db=args.db, table=args.table)
+         db_name=args.db, table=args.table)
