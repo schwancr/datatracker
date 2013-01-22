@@ -4,6 +4,15 @@ for datatracker.
 """
 
 import urllib
+import zlib
+import re
+import IPython
+import ftplib
+
+TEMP_STRING = ''
+def store_string(x):
+    global TEMP_STRING
+    TEMP_STRING += x
 
 def get_cik_from_ticker(ticker_symbol):
     """
@@ -71,6 +80,8 @@ def get_sec_index_file(year, quarter, index_type='form',
         Use open_url_obj.fp to read the page from the index
         > url_text = open_url_obj.fp.read()
     """
+    global TEMP_STRING
+    TEMP_STRING = ''
 
     translate_index_type = { 'form' : 'form',
                              'company' : 'company',
@@ -96,7 +107,18 @@ def get_sec_index_file(year, quarter, index_type='form',
 
     url = ('ftp://sec.gov/edgar/full-index/%d/QTR%d/%s.%s' %
            (year, quarter, filename, ext))
+    ftp_url = ('edgar/full-index/%d/QTR%d/%s.%s' %
+           (year, quarter, filename, ext))
+    
+    print url
+    ftp = ftplib.FTP(host='sec.gov', user='anonymous', passwd='schwancr@gmail.com')
+    out = ftp.retrbinary('RETR ' + ftp_url, store_string)
 
-    open_url_obj = urllib.urlopen(url)
+    ftp.close()
+    #open_url_obj = urllib.urlopen(url)
+    text = zlib.decompress(TEMP_STRING, 15 + 32)
 
-    return open_url_obj
+#    open_url_obj.close()
+ #   del open_url_obj
+
+    return text

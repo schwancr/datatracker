@@ -5,6 +5,8 @@ from datatracker import utils
 import argparse
 import zlib
 import re
+import time
+import numpy as np
 
 def main(forms=None, ciks=None, tickers=None, 
          date_range=None, user='tracker', host='localhost',
@@ -65,34 +67,98 @@ table [ sec_index ] - str
     cursor.execute('use %s' % db_name)
     cursor.execute('create table if not exists %s' % table + 
                    '( cik int, form varchar(10), name varchar(255), '
-                   ' url text, date_filed date )')
+                   ' url text, date_filed date, format varchar(10) )')
 
-    
+    db_conn.commit()
+    db_conn.close()
     # need a plan here...   
     # Form:
-    form_regex = r'(?P<form>[\d\w\-/]+)\s+(?P<name>[\w\s]+?)\s+(?P<cik>\d+)\s+(?P<date>[\d\-]+)\s+(?P<url>edgar/[\w/.\-\d]+)\s+'
-    regex = form_regex
+    form_regex = r'(?P<form>[\d\w\-/]+)\s+(?P<name>[&\w\s/]+?)\s+(?P<cik>\d+)\s+(?P<date>[\d\-]+)\s+(?P<url>edgar/[\w/.\-\d]+)\s+'
+    cik_regex = r'(?P<cik>\d+)|(?P<name>[&\w\s/]+)|(?P<form>[\d\w\-/]+)|(?P<date>[\d\-]+)|(?P<url>edgar/[\w.\=\d]+)'
+    
+    regex = form_regex # default to using the forms file
 
-    insert_string = 'insert into %s (cik, name, form, date_files, url) values ' % table
+    check_ciks = False
+    if not ciks is None:
+        check_ciks = True
+        ciks = list(np.unique(ciks))
 
-    year_qtr_tuples = [ (2000, 4) ]
+        if not tickers is None:
+            ciks.extend([ utils.get_cik_from_ticker(t) for t in tickers ])
+            ciks = list(np.unique(ciks))
+
+        if forms is None or len(forms) < len(ciks):
+            regex = cik_regex
+
+    elif not tickers is None:
+        check_ciks = True
+        ciks = list(np.unique([ utils.get_cik_from_ticker(t) for t in tickers ]))
+
+        if forms is None or len(forms) < len(ciks):
+            regex = cik_regex
+
+    check_forms = False
+    if not forms is None:
+        check_forms = True
+
+    if date_range is None:
+        date_range = [ (1993, 1), (int(time.strftime('%Y')), 
+                                   (int(time.strftime('%m')) - 1) / 3 + 1) ]
+    else:
+        date_range = [ (int(i[:4]), (int(i[4:6]) - 1) / 3 + 1) for i in date_range ]
+
+    ((min_year, min_qtr), (max_year, max_qtr)) = date_range
+
+    dates_as_floats = np.arange( (min_year + (min_qtr - 1) / 4.) * 4, (max_year + max_qtr / 4.)*4 ) / 4.
+
+    years = dates_as_floats.astype(int)
+    qtrs = ((dates_as_floats - years) * 4 + 1).astype(int)
+
+    year_qtr_tuples = zip(years, qtrs)
+
+    base_insert = 'insert ignore into %s (cik, name, form, date_filed, url) values' % table
+
+    insert_string = base_insert
+    lines = 0
     for year, qtr in year_qtr_tuples:
-        open_url = utils.get_sec_index_file(year, qtr, compression='gz')
+        print "Reading index for %d'th quarter in %d" % (qtr, year)
 
-        flat_text = zlib.decompress(open_url.fp.read(), 15 + 32)
+       # open_url = utils.get_sec_index_file(year, qtr, compression='gz')
+       # flat_text = zlib.decompress(open_url.fp.read(), 15 + 32)
+        flat_text = utils.get_sec_index_file(year, qtr, compression='gz')
         # Need to look up what 15 + 32 does... I just copied from stack overflow
-        line_list = flat_text.split('\n')
-        for line in flat_text.split('\n')[:20]:
+        for line in flat_text.split('\n'):
             match_obj = re.search(regex, line)
             if not match_obj:
                 continue
-
             d = match_obj.groupdict()
+
+            if check_forms:
+                if not d['form'] in forms:
+                    continue
+
+            if check_ciks:
+                if not int(d['cik']) in ciks:
+                    continue
+
+            print line
             print d
 
             insert_string += '( {cik}, "{name}", "{form}", "{date}", "ftp://sec.gov/{url}" ), '.format(**d)
+            lines += 1
+            if lines > 1000:
+                db_conn = MySQLdb.connect(host=host, user=user, db=db_name)
+                cursor = db_conn.cursor()
+                cursor.execute(insert_string[:-2])
+                db_conn.commit()
+                db_conn.close()
+                insert_string = base_insert
+                lines = 0
     
-    print insert_string
+    db_conn = MySQLdb.connect(host=host, user=user, db=db_name)
+
+    cursor = db_conn.cursor()
+    cursor.execute(insert_string[:-2])
 
     db_conn.commit()
     db_conn.close()
