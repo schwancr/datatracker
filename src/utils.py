@@ -105,13 +105,13 @@ def get_sec_index_file(year, quarter, index_type='form',
     if not ext in ['Z', 'gz', 'zip', 'sit', 'idx']:
         raise Exception('Unknown compression type %s' % compression)
 
-    url = ('ftp://sec.gov/edgar/full-index/%d/QTR%d/%s.%s' %
+    url = ('ftp://ftp.sec.gov/edgar/full-index/%d/QTR%d/%s.%s' %
            (year, quarter, filename, ext))
     ftp_url = ('edgar/full-index/%d/QTR%d/%s.%s' %
            (year, quarter, filename, ext))
     
     print url
-    ftp = ftplib.FTP(host='sec.gov', user='anonymous', passwd='schwancr@gmail.com')
+    ftp = ftplib.FTP(host='ftp.sec.gov', user='anonymous', passwd='schwancr@gmail.com')
     out = ftp.retrbinary('RETR ' + ftp_url, store_string)
 
     ftp.close()

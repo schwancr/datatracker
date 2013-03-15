@@ -144,7 +144,7 @@ table [ sec_index ] - str
             print line
             print d
 
-            insert_string += '( {cik}, "{name}", "{form}", "{date}", "ftp://sec.gov/{url}" ), '.format(**d)
+            insert_string += '( {cik}, "{name}", "{form}", "{date}", "ftp://ftp.sec.gov/{url}" ), '.format(**d)
             lines += 1
             if lines > 1000:
                 db_conn = MySQLdb.connect(host=host, user=user, db=db_name)

@@ -37,11 +37,11 @@ def configuration(parent_package='',top_path=None):
                        quiet=False)
     
     # add the scipts, so they can be called from the command line
-   # config.add_scripts([e for e in glob('scripts/*.py') if not e.endswith('__.py')])
+    config.add_scripts([e for e in glob('scripts/*.py') if not e.endswith('__.py')])
     
     # add scripts as a subpackage (so they can be imported from other scripts)
-    #config.add_subpackage('scripts',
-#                          subpackage_path=None)
+    config.add_subpackage('scripts',
+                          subpackage_path='scripts')
 
     config.add_subpackage('scrapers', subpackage_path='src/scrapers')
 
