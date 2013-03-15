@@ -73,10 +73,10 @@ table [ sec_index ] - str
     db_conn.close()
     # need a plan here...   
     # Form:
-    form_regex = r'(?P<form>[\d\w\-/]+)\s+(?P<name>[&\w\s/]+?)\s+(?P<cik>\d+)\s+(?P<date>[\d\-]+)\s+(?P<url>edgar/[\w/.\-\d]+)\s+'
-    cik_regex = r'(?P<cik>\d+)|(?P<name>[&\w\s/]+)|(?P<form>[\d\w\-/]+)|(?P<date>[\d\-]+)|(?P<url>edgar/[\w.\=\d]+)'
+    form_re = re.compile(r'(?P<form>[\d\w\-/]+)\s+(?P<name>[&\w\s/]+?)\s+(?P<cik>\d+)\s+(?P<date>[\d\-]+)\s+(?P<url>edgar/[\w/.\-\d]+)\s+')
+    cik_re = re.compile(r'(?P<cik>\d+)|(?P<name>[&\w\s/]+)|(?P<form>[\d\w\-/]+)|(?P<date>[\d\-]+)|(?P<url>edgar/[\w.\=\d]+)')
     
-    regex = form_regex # default to using the forms file
+    regex = form_re # default to using the forms file
 
     check_ciks = False
     if not ciks is None:
@@ -128,7 +128,7 @@ table [ sec_index ] - str
         flat_text = utils.get_sec_index_file(year, qtr, compression='gz')
         # Need to look up what 15 + 32 does... I just copied from stack overflow
         for line in flat_text.split('\n'):
-            match_obj = re.search(regex, line)
+            match_obj = regex.search(line)
             if not match_obj:
                 continue
             d = match_obj.groupdict()
@@ -141,8 +141,8 @@ table [ sec_index ] - str
                 if not int(d['cik']) in ciks:
                     continue
 
-            print line
-            print d
+            #print line
+            #print d
 
             insert_string += '( {cik}, "{name}", "{form}", "{date}", "ftp://ftp.sec.gov/{url}" ), '.format(**d)
             lines += 1
