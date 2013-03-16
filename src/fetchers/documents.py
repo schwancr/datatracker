@@ -8,12 +8,12 @@ import urllib
 import warnings
 import os
 import MySQLdb
-from datatracker.scrapers import ScraperBaseClass
+from datatracker.fetchers import Fetcher
 from datatracker import utils
 from datatracker import DEFAULT_STORAGE_LOCATION,
                         DB_NAME
 
-class DocumentScraper(ScraperBaseClass):
+class DocumentFetcher(Fetcher):
 
     def __init__(self, url, username=None, password=None, 
                  storage_location=DEFAULT_STORAGE_LOCATION,

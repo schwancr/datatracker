@@ -12,7 +12,7 @@ from datatracker import DEFAULT_STORAGE_LOCATION,
 import MySQLdb
 
 
-class SECScraper(DocumentScraper):
+class SECFileScraper(DocumentScraper):
 
     def __init__(self, ticker_symbol, form, 
                  storage_location=DEFAULT_STORAGE_LOCATION,

@@ -67,7 +67,8 @@ table [ sec_index ] - str
     cursor.execute('use %s' % db_name)
     cursor.execute('create table if not exists %s' % table + 
                    '( cik int, form varchar(10), name varchar(255), '
-                   ' url text, date_filed date, format varchar(10) )')
+                   ' url text, date_filed date, format varchar(10), '
+                   'ticker varchar(10) )')
 
     db_conn.commit()
     db_conn.close()

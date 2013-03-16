@@ -25,6 +25,7 @@ def get_cik_from_ticker(ticker_symbol):
         ticker symbol (case insensitive)
 
     Outputs:
+    --------
     cik_id : int
         the cik number, if the ticker was found, 
         otherwise, None.
@@ -41,6 +42,33 @@ def get_cik_from_ticker(ticker_symbol):
             break
 
     return cik_id
+
+
+def get_ticker_from_cik(cik_id):
+    """
+    Search www.sec.gov by the given CIK id and
+    get the ticker symbol so that we search forms easier.
+    
+    Inputs:
+    -------
+    cik_id : int
+        cik number that the SEC uses
+    Outputs:
+    --------
+    ticker_symbol : str
+        ticker symbol (all lowercase)
+    """
+
+    raise Exception("Not implemented.")
+   
+    for line in result.fp:
+        match_obj = re.search('cik=(\d+)', line, re.IGNORECASE)
+        if match_obj:
+            cik_id = int(match_obj.group(1))
+            break
+
+    return cik_id
+
     
 def format_sql_string(raw_string):
     
