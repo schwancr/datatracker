@@ -43,7 +43,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('scripts',
                           subpackage_path='scripts')
 
-    config.add_subpackage('scrapers', subpackage_path='src/scrapers')
+    config.add_subpackage('fetchers', subpackage_path='src/fetchers')
 
     return config
 
